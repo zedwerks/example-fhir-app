@@ -1,61 +1,77 @@
-const { response } = require('express');
-var express = require('express');
-const { HTTPVersionNotSupported } = require('http-errors');
-var router = express.Router();
-const settings = require("../settings")
-
-const https = require('https');
-const { token } = require('morgan');
-const url = require('url');
+// launch.js
+const express = require('express');
+const router = express.Router();
 const fetch = require('node-fetch');
+const { Issuer, generators } = require('openid-client');
+const settings = require('../settings');
 
-/* GET launch page. */
-router.get('/', function (req, res, next) {
-    // https://open.epic.com/Launchpad/OAuth2Sso
-
-    // 1. Receive `launch` and `iss` params
-    const launch = req.query.launch;
-    const issuer = req.query.iss;
-    req.session.issuer = issuer;
-    console.log(issuer)
-
-    // 2. Query {iss}/metadata to find the auth and token endpoints
-    var options = {
-        headers: {
-            "Accept":"application/json"
-        }
+/**
+ * SMART on FHIR Launch
+ * Receives ?iss and ?launch, fetches SMART configuration,
+ * then builds an authorization URL using openid-client + PKCE.
+ */
+router.get('/', async (req, res) => {
+  try {
+    const { iss: fhirBaseUrl, launch } = req.query;
+    if (!fhirBaseUrl || !launch) {
+      return res.status(400).send('Missing iss or launch parameter');
     }
 
-    fetch(issuer + "/metadata", options)
-    .then(res => res.json())
-    .then(json => {
-        var extensions = json.rest[0].security.extension[0].extension; 
-        extensions.forEach(function(item) {
-            if (item.url == "token") {
-                req.session.tokenUrl = item.valueUri
-            } else if (item.url == "authorize") {
-                req.session.authUrl = item.valueUri
-            }
-        })
-        // 3. Redirect to the auth endpoint with
-        //    - response_type = "code"
-        //    - client_id = client_id (defined above)
-        //    - redirect_uri = redirect_url (defined in the above form)
-        //    - launch = the launch token (as passed to your web app's launch URL)
-        //    - state = <an opaque value used by the client to maintain state between the request and callback.>
-        //    - scope = "launch" (this is necessary to indicate the app is launching from the EHR context to enable single sign-on)
-        //    which will redirect back to the redirect_uri
-        var params = "response_type=code&"
-        params += `client_id=${settings.clientID}&`
-        params += `redirect_uri=${settings.callbackUrl}&`
-        params += `launch=${launch}&`
-        params += "scope=launch&"
-        console.log(`Redirecting to ${req.session.authUrl}?${params}`)
-        res.redirect(`${req.session.authUrl}?${params}`);
-    })
-    .catch((error) => {
-        console.error('Error:', error);
+    req.session.issuer = fhirBaseUrl;
+
+    // 1️⃣ Fetch SMART configuration from the FHIR server
+    const smartConfigUrl = `${fhirBaseUrl}/.well-known/smart-configuration`;
+    console.log(`Fetching SMART configuration from ${smartConfigUrl}`);
+
+    const response = await fetch(smartConfigUrl, { headers: { Accept: 'application/json' } });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch SMART configuration: ${response.statusText}`);
+    }
+
+    const smartConfig = await response.json();
+
+    const authEndpoint = smartConfig.authorization_endpoint;
+    const tokenEndpoint = smartConfig.token_endpoint;
+    const issuerUrl = smartConfig.issuer || fhirBaseUrl; // fallback if not provided
+
+    // 2️⃣ Construct a temporary Issuer object with discovered endpoints
+    const dynamicIssuer = new Issuer({
+      issuer: issuerUrl,
+      authorization_endpoint: authEndpoint,
+      token_endpoint: tokenEndpoint,
     });
+
+    // 3️⃣ Build the OIDC client
+    const client = new dynamicIssuer.Client({
+      client_id: settings.clientID,
+      redirect_uris: [settings.callbackUrl],
+      response_types: ['code'],
+    });
+
+    // 4️⃣ Generate PKCE parameters
+    const code_verifier = generators.codeVerifier();
+    const code_challenge = generators.codeChallenge(code_verifier);
+    req.session.code_verifier = code_verifier;
+
+    // 5️⃣ Construct authorization URL
+    const authorizationUrl = client.authorizationUrl({
+      redirect_uri: settings.callbackUrl,
+      response_type: 'code',
+      code_challenge,
+      code_challenge_method: 'S256',
+      scope: 'launch openid fhirUser patient/*.read offline_access',
+      launch,
+      state: generators.state(),
+      aud: fhirBaseUrl, // SMART requires `aud` to match FHIR base URL
+    });
+
+    console.log(`Redirecting to: ${authorizationUrl}`);
+    res.redirect(authorizationUrl);
+
+  } catch (err) {
+    console.error('SMART launch error:', err);
+    res.status(500).send(`SMART Launch Error: ${err.message}`);
+  }
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
 module.exports = {
-    clientID: 'your-client-id-here-12345',
+    clientID: 'demo-smart-app',
     callbackUrl: 'http://localhost:3000/oauth-callback'
 }
