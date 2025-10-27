@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 // Routers
 import indexRouter from './routes/index.js';
 import launchRouter from './routes/launch.js';
+import luanchedRouter from './routes/launched.js';
 import callbackRouter from './routes/oauth-callback.js';
 import appIndexRouter from './routes/app-index.js';
 import appPage2Router from './routes/app-page2.js';
@@ -21,6 +22,7 @@ const app = express();
 // view engine setup
 app.set('view engine', 'ejs');
 
+app.set("views", path.join(__dirname, "views"));
 app.use(
   session({
     secret: 'enter your secret here',
@@ -41,6 +43,7 @@ app.use('/launch', launchRouter);
 app.use('/oauth-callback', callbackRouter);
 app.use('/app/index', appIndexRouter);
 app.use('/app/page2', appPage2Router);
+app.use('/app/launched', luanchedRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

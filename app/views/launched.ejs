@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="main-title"><%= title %></h1>
+      <h2 class="subtitle"><%= subtitle %></h2>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Example SMART on FHIR App</h3>
+          <p>
+            This SMART app was launched from the EMR. 
+          </p>
+          <p>It uses the SMART on FHIR
+            protocol to authenticate and authorize access to FHIR resources.
+            The app retrieves the user's FHIR base URL and uses it to make
+            requests to the FHIR server.</p>
+        </div>
+
+        <div class="card code-card">
+          <h3>Authorization Response JSON</h3>
+          <pre><code><%- tokenResponse %></code></pre>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

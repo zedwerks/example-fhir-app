@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
     }
 
     const fhirBaseUrl = decodeURIComponent(iss);
-    req.session.issuer = fhirBaseUrl;
+    req.session.fhirServerUrl = fhirBaseUrl;
 
     // 1️⃣ Fetch SMART configuration from the FHIR server
 
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
     console.log(`SMART Config: ${JSON.stringify(smartConfig, null, 2)}`);
 
     const issuerUrlString = smartConfig.issuer || null; // bullshit. 
-
+    req.session.oidc_issuer = issuerUrlString;
 
     // 2️⃣ Conduct discovery using openid-client
     const clientId = settings.clientId;
