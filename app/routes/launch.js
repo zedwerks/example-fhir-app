@@ -1,9 +1,26 @@
 // launch.js
-const express = require('express');
+
+import express from 'express';
+import fetch from 'node-fetch';
+import * as client from 'openid-client';
+import settings from '../settings.js'; // 👈 make sure the .js extension is included
 const router = express.Router();
-const fetch = require('node-fetch');
-const { Issuer, generators } = require('openid-client');
-const settings = require('../settings');
+
+async function smartConfiguration(fhirBaseUrl) {
+  const base = new URL(fhirBaseUrl);
+  const smartConfigUrl = new URL('/.well-known/smart-configuration', base);
+
+  console.log(`Fetching SMART configuration from ${smartConfigUrl.href}`);
+
+  return fetch(smartConfigUrl.href, {
+    headers: { Accept: 'application/json' },
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch SMART configuration: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  });
+}
 
 /**
  * SMART on FHIR Launch
@@ -12,61 +29,60 @@ const settings = require('../settings');
  */
 router.get('/', async (req, res) => {
   try {
-    const { iss: fhirBaseUrl, launch } = req.query;
-    if (!fhirBaseUrl || !launch) {
+    const { iss, launch } = req.query;
+    if (!iss || !launch) {
       return res.status(400).send('Missing iss or launch parameter');
     }
 
+    const fhirBaseUrl = decodeURIComponent(iss);
     req.session.issuer = fhirBaseUrl;
 
     // 1️⃣ Fetch SMART configuration from the FHIR server
-    const smartConfigUrl = `${fhirBaseUrl}/.well-known/smart-configuration`;
-    console.log(`Fetching SMART configuration from ${smartConfigUrl}`);
 
-    const response = await fetch(smartConfigUrl, { headers: { Accept: 'application/json' } });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch SMART configuration: ${response.statusText}`);
-    }
+    const smartConfig = await smartConfiguration(fhirBaseUrl);
 
-    const smartConfig = await response.json();
+    console.log(`SMART Config: ${JSON.stringify(smartConfig, null, 2)}`);
 
-    const authEndpoint = smartConfig.authorization_endpoint;
-    const tokenEndpoint = smartConfig.token_endpoint;
-    const issuerUrl = smartConfig.issuer || fhirBaseUrl; // fallback if not provided
+    const issuerUrlString = smartConfig.issuer || null; // bullshit. 
 
-    // 2️⃣ Construct a temporary Issuer object with discovered endpoints
-    const dynamicIssuer = new Issuer({
-      issuer: issuerUrl,
-      authorization_endpoint: authEndpoint,
-      token_endpoint: tokenEndpoint,
-    });
 
-    // 3️⃣ Build the OIDC client
-    const client = new dynamicIssuer.Client({
-      client_id: settings.clientID,
-      redirect_uris: [settings.callbackUrl],
-      response_types: ['code'],
-    });
+    // 2️⃣ Conduct discovery using openid-client
+    const clientId = settings.clientId;
+    const issuerUrl = new URL(issuerUrlString); // 👈 ensure it's a URL object
+    let config = await client.discovery(issuerUrl, clientId);
 
-    // 4️⃣ Generate PKCE parameters
-    const code_verifier = generators.codeVerifier();
-    const code_challenge = generators.codeChallenge(code_verifier);
+    // 3️⃣ Generate PKCE parameters
+    const code_verifier = client.randomPKCECodeVerifier();
+    const code_challenge = await client.calculatePKCECodeChallenge(code_verifier);
+    const state = client.randomState();
+    const nonce = client.randomNonce();;
+
     req.session.code_verifier = code_verifier;
 
-    // 5️⃣ Construct authorization URL
-    const authorizationUrl = client.authorizationUrl({
-      redirect_uri: settings.callbackUrl,
-      response_type: 'code',
-      code_challenge,
-      code_challenge_method: 'S256',
-      scope: 'launch openid fhirUser patient/*.read offline_access',
-      launch,
-      state: generators.state(),
-      aud: fhirBaseUrl, // SMART requires `aud` to match FHIR base URL
-    });
+    // 4️⃣ Build the parameters for the OIDC client
+    const redirect_uri = settings.callbackUrl;
+    const code_challenge_method = 'S256';
+    const scope = settings.scopes || 'openid launch patient/Patient.read';
 
-    console.log(`Redirecting to: ${authorizationUrl}`);
-    res.redirect(authorizationUrl);
+    const parameters = {
+      redirect_uri,
+      scope,
+      code_challenge,
+      code_challenge_method,
+      aud: fhirBaseUrl, // SMART requires `aud` to match FHIR base URL
+      launch,
+      state,
+      nonce, // optional but recommended
+    };
+
+    // ✅ store minimal context
+    req.session.oauth = { code_verifier, state, nonce };
+
+    // 5️⃣ Invoke the OIDC authorization
+    let redirectTo = client.buildAuthorizationUrl(config, parameters);
+    console.log('redirecting to', redirectTo.href)
+    // now redirect the user to redirectTo.href
+    res.redirect(redirectTo);
 
   } catch (err) {
     console.error('SMART launch error:', err);
@@ -74,4 +90,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+import http from 'http';
+import app from '../app.js';  // 👈 note the .js and import, not require
+
+const port = process.env.PORT || 3000;
+app.set('port', port);
+
+const server = http.createServer(app);
+server.listen(port);
+
+server.on('listening', () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+});

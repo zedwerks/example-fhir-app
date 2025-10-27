@@ -1,42 +1,61 @@
-const express = require('express');
+import express from "express";
+import settings from "../settings.js"; // note the .js extension for ESM
+
 const router = express.Router();
-const settings = require("../settings")
-const fetch = require('node-fetch');
 
-/* GET launch page. */
-router.get('/', function(req, res, next) {
- // https://open.epic.com/Launchpad/OAuth2Sso
-    // 4. POST to the token service:
-    //    - grant_type = "authorization_code"
-    //    - code = the authorization code your web app received
-    //    - redirect_uri = redirect_url (defined in the above form)
-    //    - client_id = client_id (defined in the above form)
-    //    which will return access token
-    // 5. Use the token as Bearer: {token} to make subsequent FHIR calls
-    console.log(`got a code: ${req.query.code}`)
-    const { URLSearchParams } = require('url');
-    const params = new URLSearchParams();
-    params.append("grant_type", "authorization_code")
-    params.append("code", `${req.query.code}`);
-    params.append("redirect_uri", `${settings.callbackUrl}`)
-    params.append("client_id", `${settings.clientID}`)
-    console.log(`Sending to ${req.session.tokenUrl}, params ${params}`)
+// ✅ Simple version
+function getCurrentUrl() {
+    return new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+}
 
-    var headers = {
-        "Accept":"application/json"
+/* GET OAuth callback */
+router.get("/", async (req, res, next) => {
+    try {
+        console.log(`Got OAuth code: ${req.query.code}`);
+        console.log(`State: ${req.query.state}`);
+
+        const error = req.query.error;
+        if (error) {
+            console.error(`OAuth error: ${error}`);
+            return res.status(400).send(`OAuth error: ${error}`);
+        }
+
+        if (!req.query.code) {
+            return res.status(400).send("Missing authorization code");
+        }
+        if (!req.query.state) {
+            return res.status(400).send("Missing state");
+        }
+
+        const { code_verifier, state, nonce } = req.session.oauth;
+        const issuerUrl = req.session.issuer;
+        const clientId = settings.clientId;
+
+        console.log(`Issuer URL: ${issuerUrl}`);
+        console.log(`Client ID: ${clientId}`);
+        console.log(`Code Verifier: ${code_verifier}`);
+        console.log(`State: ${state}`);
+        console.log(`Nonce: ${nonce}`);
+
+        let config = await client.discovery(new URL(issuerUrl), clientId);
+        let currentUrl = getCurrentUrl(req);  // URL object
+
+        let tokenResponse = await client.authorizationCodeGrant(config, currentUrl, {
+            pkceCodeVerifier: code_verifier,
+            expectedNonce: nonce,
+            state: state,
+            idTokenExpected: true,
+        });
+        console.log('Token Endpoint Response', tokenResponse);
+
+        req.session.patient_id = tokenResponse.patient;
+        req.session.access_token = tokenResponse.access_token;
+        req.session.tokenResponse = tokenResponse;
+        res.redirect("/app/index");
+    } catch (error) {
+        console.error("Error in OAuth callback:", error);
+        next(error);
     }
-    
-    fetch(req.session.tokenUrl, { method: 'POST', body: params, headers: headers })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data)
-        req.session.patient_id = data.patient;
-        req.session.access_token = data.access_token;  
-        res.redirect('/app/index')              
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });            
 });
 
-module.exports = router;
+export default router;

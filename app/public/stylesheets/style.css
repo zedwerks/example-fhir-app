@@ -1,14 +1,80 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #b0b0b0; /* mid-grey background */
+  color: #222;
 }
 
-a {
-  color: #00B7FF;
+.container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 20px;
+}
+
+.error-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 20px;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25em;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1.4rem;
+  font-weight: 400;
+  text-align: center;
+  margin-bottom: 2em;
+  color: #333;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+
+.code-card {
+  background: #222;
+  color: #eaeaea;
+}
+
+.code-card h3 {
+  color: #ffcc00;
+}
+
+pre {
+  margin-top: 12px;
+  background: transparent;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  overflow-x: auto;
+  white-space: pre-wrap;
 }
 
 pre.data {
   border: 1px solid;
   padding: 1em;
   white-space: normal
+}
+
+a {
+  color: #00B7FF;
 }

@@ -1,7 +1,7 @@
-var express = require('express');
+import express from 'express';
+import settings from "../settings.js"; // 👈 make sure the .js extension is included
+
 var router = express.Router();
-const settings = require("../settings")
-// const fetch = require('node-fetch');
 
 /* GET launch page. */
 router.get('/', function(req, res, next) {
@@ -14,4 +14,4 @@ router.get('/', function(req, res, next) {
     });
 });
 
-module.exports = router;
+export default router;

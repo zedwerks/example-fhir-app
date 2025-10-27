@@ -1,9 +1,12 @@
-var express = require('express');
+import express from 'express';
 var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Demo SMART App' });
+
+  const tokenResponse = req.session.tokenResponse || {};
+  console.log("Index route accessed");
+  res.render('index', { title: 'Demo SMART App', subtitle: 'Welcome to the Example FHIR App', tokenResponse: JSON.stringify(tokenResponse) });
 });
 
-module.exports = router;
+export default router; // or module.exports = router;
