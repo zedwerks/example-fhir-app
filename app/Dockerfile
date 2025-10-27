@@ -19,7 +19,7 @@ COPY . .
 EXPOSE 3000
 
 # Define environment variable for Node
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 
-# Start the server
-CMD ["node", "app.js"]
+# Start the express server
+CMD ["npm", "start"]

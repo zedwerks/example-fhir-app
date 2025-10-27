@@ -5,6 +5,6 @@ cd app
 docker build -t demo-smart-app .
 
 # Run the container
-docker run -d -p 3000:3000 demo-fhir-app
+docker run -d -p 3000:3000 demo-smart-app
 
 cd ..
