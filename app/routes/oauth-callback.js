@@ -80,8 +80,6 @@ router.get("/", async (req, res, next) => {
 
     // Store relevant info in session
     req.session.access_token = tokenJson.access_token;
-    req.session.id_token = tokenJson.id_token;
-    req.session.refresh_token = tokenJson.refresh_token;
     req.session.tokenResponse = tokenJson;
 
     // SMART-specific context (FHIR launch params)
@@ -89,7 +87,7 @@ router.get("/", async (req, res, next) => {
     req.session.encounter_id = tokenJson.encounter;
     req.session.fhir_context = tokenJson.fhirContext;
 
-    res.redirect("/app/launched");
+    res.redirect("/launched");
   } catch (error) {
     console.error("Error in OAuth callback:", error);
     next(error);

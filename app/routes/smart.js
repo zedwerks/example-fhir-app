@@ -10,7 +10,6 @@ router.get("/", async (req, res, next) => {
     const options = {
       headers: {
         "Authorization": `Bearer ${req.session.access_token}`,
-        "Epic-Client-ID": settings.clientId,
         "Accept": "application/json",
       },
     };
@@ -30,7 +29,7 @@ router.get("/", async (req, res, next) => {
 
     req.session.patient = data;
 
-    res.render("app-index", {
+    res.render("smart", {
       layout: "app-layout",
       template: "app",
       title: "Example FHIR App",
@@ -38,7 +37,7 @@ router.get("/", async (req, res, next) => {
       patient_name: req.session.patient?.name?.[0]?.text || "Unknown",
     });
   } catch (error) {
-    console.error("Error in /launch route:", error);
+    console.error("Error in route:", error);
     next(error);
   }
 });

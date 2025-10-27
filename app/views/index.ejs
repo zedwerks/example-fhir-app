@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="stylesheet" href="/stylesheets/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 </head>
-<body>
-  <div class="overlay">
-    <div class="container">
-      <h1><%= title %></h1>
-      <p><%= message %></p>
+<body class="main-body">
+    <div class="overlay">
+        <div class="container">
+            <h1 class=""main-title">
+                <%= title %>
+            </h1>
+            <p class=""subtitle">
+                <%= message %>
+            </p>
+        </div>
     </div>
-  </div>
 
-  <script src="/javascripts/main.js"></script>
-</body>
+    <script src="/javascripts/main.js"></script>
+    </body>
+
 </html>

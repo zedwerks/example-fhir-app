@@ -12,10 +12,9 @@ const __dirname = path.dirname(__filename);
 // Routers
 import indexRouter from './routes/index.js';
 import launchRouter from './routes/launch.js';
-import luanchedRouter from './routes/launched.js';
+import launchedRouter from './routes/launched.js';
 import callbackRouter from './routes/oauth-callback.js';
-import appIndexRouter from './routes/app-index.js';
-import appPage2Router from './routes/app-page2.js';
+import appSmartRouter from './routes/smart.js';
 
 const app = express();
 
@@ -41,9 +40,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/launch', launchRouter);
 app.use('/oauth-callback', callbackRouter);
-app.use('/app/index', appIndexRouter);
-app.use('/app/page2', appPage2Router);
-app.use('/app/launched', luanchedRouter);
+app.use('/smart', appSmartRouter);
+app.use('/launched', launchedRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
