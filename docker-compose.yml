@@ -1,0 +1,13 @@
+services:
+  expo-web:
+    build: ./app
+    container_name: demo-smart-app
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - demonetwork
+
+networks:
+  demonetwork:
+    external: true  
