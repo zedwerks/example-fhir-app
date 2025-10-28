@@ -3,5 +3,5 @@
 export default {
     clientId: 'demo-smart-app',
     callbackUrl: 'http://localhost:3000/oauth-callback',
-    scopes: 'openid patient/Patient.read launch'
+    scopes: 'openid patient/Patient.read launch patient/Immunization.read',
 };
