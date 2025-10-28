@@ -1,4 +1,33 @@
-Hello, {{patient_name}}
-<pre class="data">
-    {{patient}}
-</pre>
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  </head>
+  <body>
+    <script src="/javascripts/immunizations.js"></script>
+    <img src="/images/logo.png" alt="Logo" class="logo" />
+    <div class="container">
+      <h1 class="main-title"><%= title %></h1>
+      <h2 class="subtitle">Patient Immunizations</h2>
+      <h3 class="subtitle">For: <%= patient_name %></h2>
+      <div class="cards">
+        <div class="card">
+          <p>This smart app might be to provide, say, forecast information based on immz history.</p>
+        </div>
+        <div class="card code-card">
+          <h3>Patient JSON</h3>
+          <pre><code><%- patient %></code></pre>
+        </div>
+        <div class="card code-card">
+          <h3>Immunization JSON</h3>
+          <pre><code><%- immunizations %></code></pre>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
